@@ -5,6 +5,10 @@ using UnityEngine.Splines;
 
 public class Rail : MonoBehaviour
 {
+    //left-right is relative to forward
+    public Rail railLeft;
+    public Rail railRight;
+
     public bool normalDir;
     public SplineContainer railSpline;
     public float totalSplineLength;
@@ -38,6 +42,29 @@ public class Rail : MonoBehaviour
         worldPosOnSpline = LocalToWorldConversion(nearestPoint);
         worldPosOnSpline += Vector3.up * radius;
         return time;
+    }
+
+    public Rail GetRailRelativeToVector(Vector3 direction)
+    {
+        if (railLeft != null) 
+        {
+            Vector3 leftDir = railLeft.transform.position - transform.position;
+            float angle = Vector3.Angle(leftDir, direction);
+            if(angle < 90)
+            {
+                return railLeft;
+            }
+        }
+        if (railRight != null) 
+        {
+            Vector3 rightDir = railRight.transform.position - transform.position;
+            float angle = Vector3.Angle(rightDir, direction);
+            if (angle < 90)
+            {
+                return railRight;
+            }
+        }
+        return null;
     }
 
     public void GetNextRailPosition(float progress, float nextTimeNormalised, out float3 pos, out float3 tangent, out float3 up, out float3 nextPosfloat, out float3 nextTan, out float3 nextUp, out Vector3 worldPos, out Vector3 nextPos)

@@ -56,12 +56,16 @@ public class PlayerController : MonoBehaviour
 
     //grind vars
     public bool isGrinding = false;
+    bool isSwitchingRails = true;
     [SerializeField] float grindSpeed = 10;
     [SerializeField] float heightOffset;
     float timeForFullSpline;
     float elapsedTime;
     [SerializeField] float lerpSpeed = 10f;
     [SerializeField] Rail currentRail;
+
+    public float grindSwitchRailTime = 0.5f;
+    public float grindSwitchRailTimer = 0;
 
     public float CAM_DISTANCE = 0.4f;
 
@@ -164,6 +168,16 @@ public class PlayerController : MonoBehaviour
                 Debug.Log(((transform.position - prepos)/Time.fixedDeltaTime).magnitude);
                 isGrinding = true;
                 GainPower(powerChargeRateRail * Time.fixedDeltaTime);
+                if(grindSwitchRailTimer > 0)
+                {
+                    isSwitchingRails = true;
+                    grindSwitchRailTimer -= Time.fixedDeltaTime;
+                }
+                else
+                {
+
+                    isSwitchingRails = false;
+                }
                 break;
             case PigeonState.Fly:
                 moveVector = moveSpeed * inputMove * Time.fixedDeltaTime;
@@ -280,6 +294,34 @@ public class PlayerController : MonoBehaviour
     public void Move(InputAction.CallbackContext context)
     {
         inputMove = context.ReadValue<Vector2>();
+
+        switch (state)
+        {
+            case PigeonState.Grind:
+                if (!isSwitchingRails)
+                {
+                    Rail newRail = null;
+                    if (inputMove.x > 0)
+                    {
+                        newRail = currentRail.GetRailRelativeToVector(trFlyRotation.right);
+                    }
+                    else if(inputMove.x < 0)
+                    {
+                        newRail = currentRail.GetRailRelativeToVector(-trFlyRotation.right);
+                    }
+                    if (newRail != null)
+                    {
+                        //rb.linearVelocity = trFlyRotation.forward * (currentRail.totalSplineLength / timeForFullSpline);
+                        ThrowOffRail();
+                        GetOnRail(newRail);
+                        isSwitchingRails = true;
+                        grindSwitchRailTimer = grindSwitchRailTime;
+                    }
+                }
+                break;
+        }
+
+
         //Debug.Log("dirVector:" +directionVector);
     }
     public void Look(InputAction.CallbackContext context)
@@ -290,12 +332,37 @@ public class PlayerController : MonoBehaviour
     public void Jump(InputAction.CallbackContext context)
     {
         inputJump = context.performed;
+        if (inputJump)
+        {
+            Flap();
+        }
         //Debug.Log("dirVector:" +directionVector);
     }
     public void AimFly(InputAction.CallbackContext context)
     {
         inputAimFly = context.performed;
         //Debug.Log("dirVector:" +directionVector);
+    }
+
+    public void Flap()
+    {
+        switch (state)
+        {
+            case PigeonState.Walk:
+                anim.SetTrigger(strFlap);
+                SetState(PigeonState.Fly);
+                break;
+            case PigeonState.Grind:
+                ThrowOffRail();
+                anim.SetTrigger(strFlap);
+                SetState(PigeonState.Fly);
+                break;
+            case PigeonState.Fly:
+                anim.SetTrigger(strFlap);
+                break;
+            case PigeonState.Hover:
+                break;
+        }
     }
 
     void GetOnRail(Rail rail)
@@ -315,6 +382,7 @@ public class PlayerController : MonoBehaviour
                 anim.SetBool(strIsGrinding, false);
                 isGrinding = false;
                 isGliding = false;
+                isSwitchingRails = false;
                 col.enabled = true;
                 break;
             case PigeonState.Grind:
@@ -322,6 +390,7 @@ public class PlayerController : MonoBehaviour
                 anim.SetBool(strIsGrinding, true);
                 isGrinding = true;
                 isGliding = false;
+                isSwitchingRails = false;
                 col.enabled = false;
                 break;
             case PigeonState.Fly:
@@ -329,6 +398,7 @@ public class PlayerController : MonoBehaviour
                 anim.SetBool(strIsGrinding, false);
                 isGrinding = false;
                 isGliding = true;
+                isSwitchingRails = false;
                 col.enabled = true;
                 break;
         }
