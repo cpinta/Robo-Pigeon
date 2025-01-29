@@ -8,7 +8,8 @@ public enum PigeonState
 {
     Walk = 0,
     Grind = 1,
-    Fly = 2
+    Fly = 2,
+    Hover = 3
 }
 public class PlayerController : MonoBehaviour
 {
@@ -29,18 +30,29 @@ public class PlayerController : MonoBehaviour
     public Vector2 inputMove = Vector2.zero;
     public Vector2 inputLook = Vector2.zero;
     public bool inputJump = false;
+    public bool inputAimFly = false;
     public Vector3 moveDirection = Vector3.zero;
 
     //fly vars
     public bool isGliding = false;
-    public float flyTurnSpeed = 20;
+    public float flyTurnSpeed = 100;
     public float flyZRotationMax = 25;
     public Vector3 flyRotation = Vector3.zero;
     public float flyRotationZ = 0;
     public float flyRotZSpeed = 25;
-    public Vector3 velocity = Vector3.zero;
-    public float flySpeed = 10;
-    public float flyAcceleration = 40;
+    public float flyMaxSpeed = 10;
+    public float flyAboveMaxDecel = 2.5f;
+    public float flyAcceleration = 5;
+
+    //hover vars
+    public float hoverDecelMultiplier = 0.95f;
+
+    //power vars
+    public float powerMax = 100;
+    public float powerMin = 0;
+    public float powerDrain = 10;
+    public float powerChargeRateRail = 5;
+    public float currentPower = 100;
 
     //grind vars
     public bool isGrinding = false;
@@ -82,7 +94,46 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+    }
+
+    float GetYAngleEuler()
+    {
+        Debug.DrawLine(transform.position, transform.position + new Vector3(transform.forward.x, trFlyRotation.forward.y, transform.forward.z) * 1, Color.red);
+        float angle = Vector3.Angle(transform.forward, new Vector3(transform.forward.x, trFlyRotation.forward.y, transform.forward.z));
+        angle = trFlyRotation.localEulerAngles.y;
+        if(angle > 180)
+        {
+            angle = angle - 360;
+        }
+        return angle;
+    }
+
+    float GetXAngleEuler()
+    {
+        //Debug.DrawLine(transform.position, transform.position + new Vector3(trFlyRotation.forward.x, transform.forward.y, transform.forward.z) * 1, Color.blue);
+        Debug.DrawLine(transform.position, transform.position + new Vector3(trFlyRotation.forward.x, transform.forward.y, transform.forward.z) * 1, Color.blue);
         
+        float angle =  Vector3.SignedAngle(transform.forward, new Vector3(trFlyRotation.forward.x, transform.forward.y, transform.forward.z), transform.forward);
+
+        angle = trFlyRotation.localEulerAngles.x;
+
+        //if (angle < -180)
+        //{
+        //    angle = angle + 360;
+        //}
+
+        angle = (transform.rotation * trFlyRotation.rotation).eulerAngles.x;
+
+        return angle;
+    }
+    float GetZAngleEuler()
+    {
+        Debug.DrawLine(transform.position, transform.position + new Vector3(transform.forward.x, transform.forward.y, trFlyRotation.forward.z) * 1, Color.green);
+        float angle = Vector3.Angle(transform.forward, new Vector3(transform.forward.x, transform.forward.y, trFlyRotation.forward.z));
+
+        angle = trFlyRotation.localEulerAngles.z;
+
+        return angle;
     }
 
     private void FixedUpdate()
@@ -107,9 +158,12 @@ public class PlayerController : MonoBehaviour
 
                 break;
             case PigeonState.Grind:
-                MoveAlongRail();
+                Vector3 prepos = transform.position;
                 rb.linearVelocity = Vector3.zero;
+                MoveAlongRail();
+                Debug.Log(((transform.position - prepos)/Time.fixedDeltaTime).magnitude);
                 isGrinding = true;
+                GainPower(powerChargeRateRail * Time.fixedDeltaTime);
                 break;
             case PigeonState.Fly:
                 moveVector = moveSpeed * inputMove * Time.fixedDeltaTime;
@@ -131,35 +185,84 @@ public class PlayerController : MonoBehaviour
                     }
                 }
 
-                flyRotation += new Vector3(inputMove.y, inputMove.x) * flyTurnSpeed * Time.fixedDeltaTime;
-                if (flyRotation.x > 90f)
+                trFlyRotation.RotateAround(transform.position, Vector3.up, inputMove.x * flyTurnSpeed * Time.fixedDeltaTime);
+                trFlyRotation.Rotate(new Vector3(inputMove.y * flyTurnSpeed * Time.fixedDeltaTime, 0, 0));
+
+                float angle = Vector3.Angle(trFlyRotation.forward, transform.up);
+                if(angle < 10)
                 {
-                    flyRotation.x = 90;
-                }
-                if (flyRotation.x < -90)
-                {
-                    flyRotation.x = -90;
+                    trFlyRotation.Rotate(new Vector3(-inputMove.y * (10 - angle), 0, 0));
                 }
 
-                SetTransformRotationToFlyRotation();
 
-                velocity += trFlyRotation.forward * flySpeed * Time.fixedDeltaTime;
-                if(rb.linearVelocity.magnitude < flySpeed)
+                model.transform.localEulerAngles = trFlyRotation.localEulerAngles;
+
+                if (rb.linearVelocity.magnitude < flyMaxSpeed)
                 {
-                    rb.linearVelocity += trFlyRotation.forward * flyAcceleration * Time.fixedDeltaTime;
+                    rb.linearVelocity = trFlyRotation.forward * (rb.linearVelocity.magnitude + (flyAcceleration * Time.fixedDeltaTime));
                 }
                 else
                 {
-                    rb.linearVelocity = trFlyRotation.forward * flySpeed;
+                    rb.linearVelocity = trFlyRotation.forward * flyMaxSpeed * Time.fixedDeltaTime;
+                    //rb.linearVelocity += -trFlyRotation.forward * flyAboveMaxDecel * Time.fixedDeltaTime;
                 }
 
                 //transform.position += trFlyRotation.forward * flySpeed * Time.fixedDeltaTime;
 
+
+                UsePower(powerDrain * Time.fixedDeltaTime);
+
                 anim.SetBool(strIsGliding, true);
+                break;
+            case PigeonState.Hover:
+                if (inputAimFly)
+                {
+                    Vector3 lookDirection;
+
+                    //model.transform.eulerAngles = new Vector3(model.transform.eulerAngles.x, cam.transform.eulerAngles.y, model.transform.eulerAngles.z);
+                    
+
+
+                    model.transform.rotation = cam.transform.rotation;
+
+                    rb.linearVelocity = trFlyRotation.forward * rb.linearVelocity.magnitude * hoverDecelMultiplier * Time.fixedDeltaTime;
+
+                    anim.SetBool(strIsGliding, false);
+                }
+                else
+                {
+                    SetState(PigeonState.Fly);
+                    moveVector = moveSpeed * inputMove * Time.fixedDeltaTime;
+                    moveDirection += moveVector.y * new Vector3(cam.transform.forward.x, 0, cam.transform.forward.z).normalized;
+                    moveDirection += moveVector.x * new Vector3(cam.transform.right.x, 0, cam.transform.right.z).normalized;
+
+                    trFlyRotation.rotation = model.transform.rotation;
+
+                    rb.linearVelocity = trFlyRotation.forward * rb.linearVelocity.magnitude;
+                }
                 break;
         }
 
         moveDirection = Vector3.zero;
+
+    }
+
+    void UsePower(float usedPower)
+    {
+        currentPower -= usedPower;
+        if (currentPower < powerMin)
+        {
+            currentPower = 0;
+        }
+    }
+
+    void GainPower(float givePower)
+    {
+        currentPower += givePower;
+        if (currentPower > powerMax)
+        {
+            currentPower = powerMax;
+        }
     }
 
     void SetTransformRotationToFlyRotation(bool useFlyRotZ = true)
@@ -187,6 +290,11 @@ public class PlayerController : MonoBehaviour
     public void Jump(InputAction.CallbackContext context)
     {
         inputJump = context.performed;
+        //Debug.Log("dirVector:" +directionVector);
+    }
+    public void AimFly(InputAction.CallbackContext context)
+    {
+        inputAimFly = context.performed;
         //Debug.Log("dirVector:" +directionVector);
     }
 
@@ -243,11 +351,11 @@ public class PlayerController : MonoBehaviour
             float nextTimeNormalised;
             if (currentRail.normalDir)
             {
-                nextTimeNormalised = (elapsedTime + Time.deltaTime) / timeForFullSpline;
+                nextTimeNormalised = (elapsedTime + Time.fixedDeltaTime) / timeForFullSpline;
             }
             else
             {
-                nextTimeNormalised = (elapsedTime - Time.deltaTime) / timeForFullSpline;
+                nextTimeNormalised = (elapsedTime - Time.fixedDeltaTime) / timeForFullSpline;
             }
 
 
@@ -262,26 +370,26 @@ public class PlayerController : MonoBehaviour
 
             //transform.position = worldPos + (transform.up * heightOffset);
             transform.position = worldPos;
-            trFlyRotation.rotation = Quaternion.Lerp(trFlyRotation.rotation, Quaternion.LookRotation(nextPos - worldPos), lerpSpeed * Time.deltaTime);
-            trFlyRotation.rotation = Quaternion.Lerp(trFlyRotation.rotation, Quaternion.FromToRotation(trFlyRotation.up, up) * trFlyRotation.rotation, lerpSpeed * Time.deltaTime);
+            trFlyRotation.rotation = Quaternion.Lerp(trFlyRotation.rotation, Quaternion.LookRotation(nextPos - worldPos), lerpSpeed * Time.fixedDeltaTime);
+            trFlyRotation.rotation = Quaternion.Lerp(trFlyRotation.rotation, Quaternion.FromToRotation(trFlyRotation.up, up) * trFlyRotation.rotation, lerpSpeed * Time.fixedDeltaTime);
             model.transform.localRotation = trFlyRotation.localRotation;
 
             if (currentRail.normalDir)
             {
-                elapsedTime += Time.deltaTime;
+                elapsedTime += Time.fixedDeltaTime;
             }
             else
             {
-                elapsedTime -= Time.deltaTime;
+                elapsedTime -= Time.fixedDeltaTime;
             }
 
-            Debug.Log(worldPos);
         }
     }
 
     void CalculateAndSetRailPosition()
     {
-        timeForFullSpline = currentRail.totalSplineLength / grindSpeed;
+        timeForFullSpline = currentRail.totalSplineLength / rb.linearVelocity.magnitude;
+        Debug.Log("Pre:"+rb.linearVelocity.magnitude);
 
         Vector3 splinePoint;
 
@@ -301,6 +409,8 @@ public class PlayerController : MonoBehaviour
         Vector3 otherAngle = new Vector3(transform.forward.x, trFlyRotation.forward.y, transform.forward.z);
         flyRotation = trFlyRotation.eulerAngles;
         //flyRotation.y = Vector3.Angle(transform.forward, otherAngle);
+        Debug.Log("Post:"+currentRail.totalSplineLength / timeForFullSpline);
+        rb.linearVelocity = trFlyRotation.forward * (currentRail.totalSplineLength / timeForFullSpline);
         currentRail = null;
         SetTransformRotationToFlyRotation();
         //trFlyRotation.position += trFlyRotation.forward * 1;
