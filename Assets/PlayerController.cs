@@ -1,11 +1,14 @@
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Splines;
 
 
 public enum PigeonState
 {
     Walk = 0,
-    Fly = 1
+    Grind = 1,
+    Fly = 2
 }
 public class PlayerController : MonoBehaviour
 {
@@ -20,14 +23,15 @@ public class PlayerController : MonoBehaviour
     public string strIsGliding = "isGliding";
     public string strFlap = "Flap";
 
-
+    //fly vars
     public PigeonState state = PigeonState.Fly;
     public Vector2 inputMove = Vector2.zero;
     public Vector2 inputLook = Vector2.zero;
+    public bool inputJump = false;
     public Vector3 moveDirection = Vector3.zero;
-    public bool isGrinding = false;
-    public bool isGliding = false;
 
+    //fly vars
+    public bool isGliding = false;
     public float flyTurnSpeed = 20;
     public float flyZRotationMax = 25;
     public Vector3 flyRotation = Vector3.zero;
@@ -36,6 +40,15 @@ public class PlayerController : MonoBehaviour
     public Vector3 velocity = Vector3.zero;
     public float flySpeed = 10;
     public float flyAcceleration = 40;
+
+    //grind vars
+    public bool isGrinding = false;
+    [SerializeField] float grindSpeed = 10;
+    [SerializeField] float heightOffset;
+    float timeForFullSpline;
+    float elapsedTime;
+    [SerializeField] float lerpSpeed = 10f;
+    [SerializeField] Rail currentRail;
 
     public float CAM_DISTANCE = 0.4f;
 
@@ -54,6 +67,10 @@ public class PlayerController : MonoBehaviour
         {
             rb = GetComponent<Rigidbody>();
         }
+
+        PlayerRailCollider railCol = GetComponentInChildren<PlayerRailCollider>();
+        railCol.railHit.AddListener(GetOnRail);
+
         anim.SetBool(strIsGrinding, false);
         anim.SetBool(strIsGrinding, false);
 
@@ -86,6 +103,10 @@ public class PlayerController : MonoBehaviour
                 anim.SetBool(strIsGliding, false);
 
                 break;
+            case PigeonState.Grind:
+                MoveAlongRail();
+                isGrinding = true;
+                break;
             case PigeonState.Fly:
                 moveVector = moveSpeed * inputMove * Time.fixedDeltaTime;
 ;
@@ -116,8 +137,7 @@ public class PlayerController : MonoBehaviour
                     flyRotation.x = -90;
                 }
 
-                trFlyRotation.localEulerAngles = flyRotation;
-                model.transform.localEulerAngles = new Vector3(flyRotation.x, flyRotation.y, flyRotationZ);
+                SetTransformRotationToFlyRotation();
 
                 velocity += trFlyRotation.forward * flySpeed * Time.fixedDeltaTime;
                 if(rb.linearVelocity.magnitude < flySpeed)
@@ -138,6 +158,18 @@ public class PlayerController : MonoBehaviour
         moveDirection = Vector3.zero;
     }
 
+    void SetTransformRotationToFlyRotation(bool useFlyRotZ = true)
+    {
+        trFlyRotation.localEulerAngles = flyRotation;
+        model.transform.localEulerAngles = new Vector3(flyRotation.x, flyRotation.y, useFlyRotZ? flyRotationZ : 0);
+    }
+
+    void SetFlyRotation(Vector3 rotation, bool useFlyRotZ = false)
+    {
+        flyRotation = rotation;
+        SetTransformRotationToFlyRotation(useFlyRotZ);
+    }
+
     public void Move(InputAction.CallbackContext context)
     {
         inputMove = context.ReadValue<Vector2>();
@@ -147,5 +179,118 @@ public class PlayerController : MonoBehaviour
     {
         inputLook = context.ReadValue<Vector2>();
         //Debug.Log("dirVector:" +directionVector);
+    }
+    public void Jump(InputAction.CallbackContext context)
+    {
+        inputJump = context.performed;
+        //Debug.Log("dirVector:" +directionVector);
+    }
+
+    void GetOnRail(Rail rail)
+    {
+        SetState(PigeonState.Grind);
+        currentRail = rail;
+        CalculateAndSetRailPosition();
+    }
+
+    public void SetState(PigeonState newState)
+    {
+        state = newState;
+        switch (newState)
+        {
+            case PigeonState.Walk:
+                anim.SetBool(strIsGliding, false);
+                anim.SetBool(strIsGrinding, false);
+                isGrinding = false;
+                isGliding = false;
+                break;
+            case PigeonState.Grind:
+                anim.SetBool(strIsGliding, false);
+                anim.SetBool(strIsGrinding, true);
+                isGrinding = true;
+                isGliding = false;
+                break;
+            case PigeonState.Fly:
+                anim.SetBool(strIsGliding, true);
+                anim.SetBool(strIsGrinding, false);
+                isGrinding = false;
+                isGliding = true;
+                break;
+        }
+    }
+
+    void MoveAlongRail()
+    {
+        if (currentRail != null && isGrinding) //This is just some additional error checking.
+        {
+
+            float progress = elapsedTime / timeForFullSpline;
+
+
+            if (progress < 0 || progress > 1)
+            {
+                ThrowOffRail();
+                return;
+            }
+
+            float nextTimeNormalised;
+            if (currentRail.normalDir)
+            {
+                nextTimeNormalised = (elapsedTime + Time.deltaTime) / timeForFullSpline;
+            }
+            else
+            {
+                nextTimeNormalised = (elapsedTime - Time.deltaTime) / timeForFullSpline;
+            }
+
+
+            float3 pos, tangent, up;
+            float3 nextPosfloat, nextTan, nextUp;
+            SplineUtility.Evaluate(currentRail.railSpline.Spline, progress, out pos, out tangent, out up);
+            SplineUtility.Evaluate(currentRail.railSpline.Spline, nextTimeNormalised, out nextPosfloat, out nextTan, out nextUp);
+
+            Vector3 worldPos = currentRail.LocalToWorldConversion(pos);
+            Vector3 nextPos = currentRail.LocalToWorldConversion(nextPosfloat);
+
+            transform.position = worldPos + (transform.up * heightOffset);
+            trFlyRotation.rotation = Quaternion.Lerp(trFlyRotation.rotation, Quaternion.LookRotation(nextPos - worldPos), lerpSpeed * Time.deltaTime);
+            trFlyRotation.rotation = Quaternion.Lerp(trFlyRotation.rotation, Quaternion.FromToRotation(trFlyRotation.up, up) * trFlyRotation.rotation, lerpSpeed * Time.deltaTime);
+
+            if (currentRail.normalDir)
+            {
+                elapsedTime += Time.deltaTime;
+            }
+            else
+            {
+                elapsedTime -= Time.deltaTime;
+            }
+        }
+    }
+
+    void CalculateAndSetRailPosition()
+    {
+        timeForFullSpline = currentRail.totalSplineLength / grindSpeed;
+
+        Vector3 splinePoint;
+
+        float normalisedTime = currentRail.CalculateTargetRailPoint(transform.position, out splinePoint);
+        elapsedTime = timeForFullSpline * normalisedTime;
+
+        float3 pos, forward, up;
+        SplineUtility.Evaluate(currentRail.railSpline.Spline, normalisedTime, out pos, out forward, out up);
+        currentRail.CalculateDirection(forward, trFlyRotation.forward);
+        transform.position = splinePoint + (transform.up * heightOffset);
+        trFlyRotation.transform.rotation = transform.rotation;
+    }
+
+    void ThrowOffRail()
+    {
+        SetState(PigeonState.Fly);
+        Vector3 otherAngle = new Vector3(transform.forward.x, trFlyRotation.forward.y, transform.forward.z);
+        flyRotation = trFlyRotation.eulerAngles;
+        //flyRotation.y = Vector3.Angle(transform.forward, otherAngle);
+        currentRail = null;
+        SetTransformRotationToFlyRotation();
+        //trFlyRotation.position += trFlyRotation.forward * 1;
     }
 }
