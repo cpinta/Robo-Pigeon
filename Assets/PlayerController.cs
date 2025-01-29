@@ -17,6 +17,7 @@ public class PlayerController : MonoBehaviour
     public Transform trFlyRotation;
     public Rigidbody rb;
     public Animator anim;
+    public Collider col;
     public InputAction move;
 
     public string strIsGrinding = "isGrinding";
@@ -74,6 +75,8 @@ public class PlayerController : MonoBehaviour
         anim.SetBool(strIsGrinding, false);
         anim.SetBool(strIsGrinding, false);
 
+        SetState(PigeonState.Fly);
+
     }
 
     // Update is called once per frame
@@ -105,6 +108,7 @@ public class PlayerController : MonoBehaviour
                 break;
             case PigeonState.Grind:
                 MoveAlongRail();
+                rb.linearVelocity = Vector3.zero;
                 isGrinding = true;
                 break;
             case PigeonState.Fly:
@@ -203,18 +207,21 @@ public class PlayerController : MonoBehaviour
                 anim.SetBool(strIsGrinding, false);
                 isGrinding = false;
                 isGliding = false;
+                col.enabled = true;
                 break;
             case PigeonState.Grind:
                 anim.SetBool(strIsGliding, false);
                 anim.SetBool(strIsGrinding, true);
                 isGrinding = true;
                 isGliding = false;
+                col.enabled = false;
                 break;
             case PigeonState.Fly:
                 anim.SetBool(strIsGliding, true);
                 anim.SetBool(strIsGrinding, false);
                 isGrinding = false;
                 isGliding = true;
+                col.enabled = true;
                 break;
         }
     }
@@ -245,16 +252,19 @@ public class PlayerController : MonoBehaviour
 
 
             float3 pos, tangent, up;
-            float3 nextPosfloat, nextTan, nextUp;
-            SplineUtility.Evaluate(currentRail.railSpline.Spline, progress, out pos, out tangent, out up);
-            SplineUtility.Evaluate(currentRail.railSpline.Spline, nextTimeNormalised, out nextPosfloat, out nextTan, out nextUp);
+            float3 nextPosfloat, nextTan, nextUp; 
+            Vector3 worldPos;
+            Vector3 nextPos;
 
-            Vector3 worldPos = currentRail.LocalToWorldConversion(pos);
-            Vector3 nextPos = currentRail.LocalToWorldConversion(nextPosfloat);
+            currentRail.GetNextRailPosition(progress, nextTimeNormalised, out pos, out tangent, out up, out nextPosfloat, out nextTan, out nextUp, out worldPos, out nextPos);
+            //SplineUtility.Evaluate(currentRail.railSpline.Spline, progress, out pos, out tangent, out up);
+            //SplineUtility.Evaluate(currentRail.railSpline.Spline, nextTimeNormalised, out nextPosfloat, out nextTan, out nextUp);
 
-            transform.position = worldPos + (transform.up * heightOffset);
+            //transform.position = worldPos + (transform.up * heightOffset);
+            transform.position = worldPos;
             trFlyRotation.rotation = Quaternion.Lerp(trFlyRotation.rotation, Quaternion.LookRotation(nextPos - worldPos), lerpSpeed * Time.deltaTime);
             trFlyRotation.rotation = Quaternion.Lerp(trFlyRotation.rotation, Quaternion.FromToRotation(trFlyRotation.up, up) * trFlyRotation.rotation, lerpSpeed * Time.deltaTime);
+            model.transform.localRotation = trFlyRotation.localRotation;
 
             if (currentRail.normalDir)
             {
@@ -264,6 +274,8 @@ public class PlayerController : MonoBehaviour
             {
                 elapsedTime -= Time.deltaTime;
             }
+
+            Debug.Log(worldPos);
         }
     }
 

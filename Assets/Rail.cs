@@ -8,11 +8,13 @@ public class Rail : MonoBehaviour
     public bool normalDir;
     public SplineContainer railSpline;
     public float totalSplineLength;
+    public float radius;
 
     private void Start()
     {
         railSpline = GetComponent<SplineContainer>();
         totalSplineLength = railSpline.CalculateLength();
+        radius = GetComponent<SplineExtrude>().Radius;
     }
 
 
@@ -34,7 +36,17 @@ public class Rail : MonoBehaviour
         float time;
         SplineUtility.GetNearestPoint(railSpline.Spline, WorldToLocalConversion(playerPos), out nearestPoint, out time);
         worldPosOnSpline = LocalToWorldConversion(nearestPoint);
+        worldPosOnSpline += Vector3.up * radius;
         return time;
+    }
+
+    public void GetNextRailPosition(float progress, float nextTimeNormalised, out float3 pos, out float3 tangent, out float3 up, out float3 nextPosfloat, out float3 nextTan, out float3 nextUp, out Vector3 worldPos, out Vector3 nextPos)
+    {
+        SplineUtility.Evaluate(railSpline.Spline, progress, out pos, out tangent, out up);
+        SplineUtility.Evaluate(railSpline.Spline, nextTimeNormalised, out nextPosfloat, out nextTan, out nextUp);
+
+        worldPos = LocalToWorldConversion(pos) + Vector3.up * radius;
+        nextPos = LocalToWorldConversion(nextPosfloat) + Vector3.up * radius;
     }
 
     public void CalculateDirection(float3 railForward, Vector3 playerForward)
