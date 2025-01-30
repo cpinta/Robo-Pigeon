@@ -3187,7 +3187,19 @@ MonoBehaviour:
   flyRotZSpeed: 30
   flyMaxSpeed: 10
   flyAboveMaxDecel: 2.5
-  flyAcceleration: 1
+  flyAcceleration: 100
+  gravityMagnitude: 5
+  maxThrustSpeed: 0
+  minThrustSpeed: 0
+  thrustFactor: 0
+  dragFactor: 0
+  minDrag: 0
+  rotationSpeed: 0
+  tiltStrength: 90
+  lowPercent: 0.1
+  highPercent: 1
+  flapForce: 5
+  flapPowerDrain: 20
   hoverDecelRate: 0.1
   hoverMinSpeed: 0.5
   powerMax: 100
@@ -3265,7 +3277,7 @@ Rigidbody:
     m_Bits: 0
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
-  m_UseGravity: 0
+  m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 112

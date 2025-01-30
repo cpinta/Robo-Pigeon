@@ -9,7 +9,8 @@ public enum PigeonState
     Walk = 0,
     Grind = 1,
     Fly = 2,
-    Hover = 3
+    Hover = 3,
+    Hurt = 4
 }
 public class PlayerController : MonoBehaviour
 {
@@ -45,20 +46,9 @@ public class PlayerController : MonoBehaviour
     public float flyAcceleration = 5;
     public float gravityMagnitude = 5;
 
-
-    [SerializeField] private float maxThrustSpeed;
-    [SerializeField] private float minThrustSpeed;
-    [SerializeField] private float thrustFactor;
-    [SerializeField] private float dragFactor;
-    [SerializeField] private float minDrag;
-    [SerializeField] private float rotationSpeed;
-    [SerializeField] private float tiltStrength = 90;
-    [SerializeField] private float lowPercent = 0.1f, highPercent = 1;
-    private float currentThrustSpeed;
-
     //flap vars
     public float flapForce = 5;
-    public float flapPowerDrain = 20;
+    public float flapPowerDrain = 10;
 
     //hover vars
     public float hoverDecelRate = 0.025f;
@@ -88,24 +78,35 @@ public class PlayerController : MonoBehaviour
 
     public float moveSpeed = 10f;
 
-    //score vars
-    float score = 0;
-    float highscore = 0;
+    //hurt vars
+    Vector3 hurtDirection = Vector3.zero;
+    float isHurtTimer = 0;
+    float isHurtTime = 2;
+    float hurtPowerLoss = 10;
+    float hurtBounceSpeed = 2;
 
-    float currentStreak = 0;
-    float highestStreak = 0;
+    //score vars
+    int score = 0;
+    int highscore = 0;
+
+    int currentStreak = 0;
+    int highestStreak = 0;
     float streakTime = 4;
     float streakTimer = 0;
     float perStreakScoreMultiplier = 0.05f;
 
-    float grindScoreAmount = 1;
+    int grindScoreAmount = 1;
     float addGrindScoreEvery = 0.5f;
     float addGrindScoreEveryTimer = 0;
 
-    float flapScoreAmount = 2;
+    int maxSpeedScoreAmount = 1;
+    float maxSpeedScoreEvery = 0.5f;
+    float maxSpeedScoreEveryTimer = 0;
 
-    float stealMailScoreAmount = 4;
-    float poopVanScoreAmount = 8;
+    int flapScoreAmount = 2;
+
+    int stealMailScoreAmount = 4;
+    int poopVanScoreAmount = 8;
 
 
 
@@ -213,6 +214,16 @@ public class PlayerController : MonoBehaviour
 
                     isSwitchingRails = false;
                 }
+
+                if(addGrindScoreEveryTimer > 0)
+                {
+                    addGrindScoreEveryTimer -= Time.fixedDeltaTime;
+                }
+                else
+                {
+                    GainScore(grindScoreAmount);
+                    addGrindScoreEveryTimer = addGrindScoreEvery;
+                }
                 break;
             case PigeonState.Fly:
                 moveVector = moveSpeed * inputMove * Time.fixedDeltaTime;
@@ -252,23 +263,30 @@ public class PlayerController : MonoBehaviour
 
                 if (rb.linearVelocity.magnitude < maxSpeed)
                 {
-                    //rb.linearVelocity = trFlyRotation.forward * (rb.linearVelocity.magnitude + (flyAcceleration * Time.fixedDeltaTime));
-                    float pitchInDeg = transform.eulerAngles.x % 360;
-                    float pitchInRads = transform.eulerAngles.x * Mathf.Deg2Rad;
-                    float mappedPitch = -Mathf.Sin(pitchInRads);
-                    float offsetMappedPitch = Mathf.Cos(pitchInRads) * dragFactor;
-                    float accelerationPercent = pitchInDeg >= 300f ? lowPercent : highPercent;
-                    Vector3 glidingForce = -Vector3.forward * currentThrustSpeed;
-
-                    currentThrustSpeed += mappedPitch * accelerationPercent * thrustFactor * Time.deltaTime;
-                    currentThrustSpeed = Mathf.Clamp(currentThrustSpeed, 0, maxThrustSpeed);
-                    rb.AddForce(trFlyRotation.forward * (flyAcceleration * Time.fixedDeltaTime));
+                    rb.linearVelocity = trFlyRotation.forward * (rb.linearVelocity.magnitude + (flyAcceleration * Time.fixedDeltaTime));
                 }
                 else
                 {
-                    rb.linearVelocity = trFlyRotation.forward * maxSpeed;
+                    if ((trFlyRotation.forward * maxSpeed).magnitude != 0)
+                    {
+                        rb.linearVelocity = trFlyRotation.forward * maxSpeed;
+                    }
+
+                    if(rb.linearVelocity.magnitude > flyMaxSpeed)
+                    {
+                        if (maxSpeedScoreEveryTimer > 0)
+                        {
+                            maxSpeedScoreEveryTimer -= Time.fixedDeltaTime;
+                        }
+                        else
+                        {
+                            GainScore(maxSpeedScoreAmount);
+                            maxSpeedScoreEveryTimer = maxSpeedScoreEvery;
+                        }
+                    }
                 }
                 //rb.linearVelocity += transform.up * -gravityMagnitude * Time.fixedDeltaTime;
+
 
                 LosePower(powerDrain * Time.fixedDeltaTime);
 
@@ -288,6 +306,21 @@ public class PlayerController : MonoBehaviour
                 }
 
                 anim.SetBool(strIsHovering, true);
+                break;
+            case PigeonState.Hurt:
+                if(isHurtTimer > 0)
+                {
+                    isHurtTimer -= Time.fixedDeltaTime;
+                }
+                else
+                {
+                    SetState(PigeonState.Fly);
+                }
+                trFlyRotation.RotateAround(transform.position, Vector3.up, inputMove.x * flyTurnSpeed * Time.fixedDeltaTime);
+                trFlyRotation.Rotate(new Vector3(inputMove.y * flyTurnSpeed * Time.fixedDeltaTime, 0, 0));
+                model.transform.localEulerAngles = trFlyRotation.localEulerAngles;
+
+                transform.position += hurtDirection * Time.fixedDeltaTime;
                 break;
         }
 
@@ -323,6 +356,66 @@ public class PlayerController : MonoBehaviour
         {
             currentPower = powerMax;
         }
+    }
+
+    void GainScore(int giveScore)
+    {
+        score += giveScore;
+    }
+
+    void LoseScore(int loseScore)
+    {
+        score -= loseScore;
+        if (score < 0)
+        {
+            score = 0;
+        }
+    }
+
+    void AddStreak()
+    {
+        currentStreak++;
+        if (currentStreak > highestStreak) 
+        { 
+            highestStreak = currentStreak;
+        }
+    }
+
+    void EndStreak()
+    {
+        currentStreak = 0;
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if(currentPower == 0)
+        {
+            //if(rb.linearVelocity.normalized == Vector3.down)
+            //{
+
+            //}
+
+            Died();
+        }
+        else
+        {
+            Collision(collision);
+        }
+    }
+
+    void Collision(Collision collision)
+    {
+        hurtDirection = collision.contacts[0].normal * hurtBounceSpeed;
+
+        LosePower(hurtPowerLoss);
+        //hurtDirection = -rb.linearVelocity;
+        SetState(PigeonState.Hurt);
+        EndStreak();
+    }
+
+    void Died()
+    {
+
     }
 
     void SetTransformRotationToFlyRotation(bool useFlyRotZ = true)
@@ -441,6 +534,8 @@ public class PlayerController : MonoBehaviour
                 anim.SetBool(strIsHovering, false);
                 isSwitchingRails = false;
                 col.enabled = true;
+                rb.useGravity = true;
+
                 break;
             case PigeonState.Grind:
                 anim.SetBool(strIsGliding, false);
@@ -448,6 +543,9 @@ public class PlayerController : MonoBehaviour
                 anim.SetBool(strIsHovering, false);
                 isSwitchingRails = false;
                 col.enabled = false;
+                rb.useGravity = false;
+
+                addGrindScoreEveryTimer = 0;
                 break;
             case PigeonState.Hover:
                 anim.SetBool(strIsGliding, false);
@@ -455,6 +553,8 @@ public class PlayerController : MonoBehaviour
                 anim.SetBool(strIsHovering, true);
                 isSwitchingRails = false;
                 col.enabled = false;
+                rb.useGravity = false;
+
                 break;
             case PigeonState.Fly:
                 anim.SetBool(strIsGliding, true);
@@ -462,6 +562,19 @@ public class PlayerController : MonoBehaviour
                 anim.SetBool(strIsHovering, false);
                 isSwitchingRails = false;
                 col.enabled = true;
+                rb.useGravity = true;
+
+                maxSpeedScoreEveryTimer = 0;
+                break;
+            case PigeonState.Hurt:
+                anim.SetBool(strIsGliding, true);
+                anim.SetBool(strIsGrinding, false);
+                anim.SetBool(strIsHovering, false);
+                isSwitchingRails = false;
+                col.enabled = false;
+                rb.useGravity = false;
+
+                isHurtTimer = isHurtTime;
                 break;
         }
     }
