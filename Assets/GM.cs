@@ -14,6 +14,8 @@ public class GM : MonoBehaviour
     public Camera camera;
     public PlayerController player;
 
+    public Van prefabVan;
+
     private void Awake()
     {
         if (instance == null)
