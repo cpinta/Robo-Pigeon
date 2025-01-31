@@ -1,4 +1,5 @@
 using Unity.Mathematics;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Splines;
@@ -26,6 +27,7 @@ public class PlayerController : MonoBehaviour
     string strIsGliding = "isGliding";
     string strIsHovering = "isHovering";
     string strFlap = "Flap";
+
 
     //fly vars
     public PigeonState state = PigeonState.Fly;
@@ -86,26 +88,22 @@ public class PlayerController : MonoBehaviour
     float hurtBounceSpeed = 2;
 
     //score vars
-    int score = 0;
-    int highscore = 0;
-
-    int currentStreak = 0;
-    int highestStreak = 0;
-    float streakTime = 4;
-    float streakTimer = 0;
-    float perStreakScoreMultiplier = 0.05f;
-
+    string strGrindScoreDesc = "Grinding";
     int grindScoreAmount = 1;
     float addGrindScoreEvery = 0.5f;
     float addGrindScoreEveryTimer = 0;
 
+    string strHitMaxSpeedDesc = "Hit Max Speed";
     int maxSpeedScoreAmount = 1;
     float maxSpeedScoreEvery = 0.5f;
     float maxSpeedScoreEveryTimer = 0;
 
+    string strFlapScoreDesc = "Flap Wings";
     int flapScoreAmount = 2;
 
+    string strStoleMailDesc = "Stole Mail";
     int stealMailScoreAmount = 4;
+    string strBlindedMailTruck = "Blinded Mail Truck";
     int poopVanScoreAmount = 8;
 
 
@@ -221,7 +219,7 @@ public class PlayerController : MonoBehaviour
                 }
                 else
                 {
-                    GainScore(grindScoreAmount);
+                    GM.Instance.ChangeScore(grindScoreAmount, strGrindScoreDesc);
                     addGrindScoreEveryTimer = addGrindScoreEvery;
                 }
                 break;
@@ -280,7 +278,7 @@ public class PlayerController : MonoBehaviour
                         }
                         else
                         {
-                            GainScore(maxSpeedScoreAmount);
+                            ChangeScore(maxSpeedScoreAmount, strHitMaxSpeedDesc);
                             maxSpeedScoreEveryTimer = maxSpeedScoreEvery;
                         }
                     }
@@ -293,7 +291,6 @@ public class PlayerController : MonoBehaviour
                 anim.SetBool(strIsGliding, true);
                 break;
             case PigeonState.Hover:
-                Vector3 lookDirection;
                 //model.transform.eulerAngles = new Vector3(model.transform.eulerAngles.x, cam.transform.eulerAngles.y, model.transform.eulerAngles.z);
 
                 model.transform.rotation = cam.transform.rotation;
@@ -358,32 +355,9 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    void GainScore(int giveScore)
+    void ChangeScore(int giveScore, string description)
     {
-        score += giveScore;
-    }
-
-    void LoseScore(int loseScore)
-    {
-        score -= loseScore;
-        if (score < 0)
-        {
-            score = 0;
-        }
-    }
-
-    void AddStreak()
-    {
-        currentStreak++;
-        if (currentStreak > highestStreak) 
-        { 
-            highestStreak = currentStreak;
-        }
-    }
-
-    void EndStreak()
-    {
-        currentStreak = 0;
+        GM.Instance.ChangeScore(giveScore, description);
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -410,12 +384,12 @@ public class PlayerController : MonoBehaviour
         LosePower(hurtPowerLoss);
         //hurtDirection = -rb.linearVelocity;
         SetState(PigeonState.Hurt);
-        EndStreak();
+        GM.Instance.EndStreak();
     }
 
     void Died()
     {
-
+        GM.Instance.EndStreak();
     }
 
     void SetTransformRotationToFlyRotation(bool useFlyRotZ = true)

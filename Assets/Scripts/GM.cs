@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.Events;
+using UnityEngine.SocialPlatforms.Impl;
 
 public class GM : MonoBehaviour
 {
@@ -11,10 +13,22 @@ public class GM : MonoBehaviour
     }
     private static GM instance;
 
-    public Camera camera;
+    public Camera cam;
     public PlayerController player;
 
     public Van prefabVan;
+
+    public UnityEvent<string, int> scoreChanged;
+
+    //score vars
+    public int score = 0;
+    public int highscore = 0;
+
+    public int currentStreak = 0;
+    public int highestStreak = 0;
+    float streakTime = 4;
+    float streakTimer = 0;
+    float perStreakScoreMultiplier = 0.05f;
 
     private void Awake()
     {
@@ -28,6 +42,34 @@ public class GM : MonoBehaviour
             Destroy(this);
         }
     }
+
+    public void ChangeScore(int amount, string description)
+    {
+        scoreChanged.Invoke(description, amount);
+
+
+        score += amount;
+        if (score < 0)
+        {
+            score = 0;
+        }
+    }
+
+    public void AddStreak()
+    {
+        currentStreak++;
+        if (currentStreak > highestStreak)
+        {
+            highestStreak = currentStreak;
+        }
+    }
+
+    public void EndStreak()
+    {
+        currentStreak = 0;
+    }
+
+
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
