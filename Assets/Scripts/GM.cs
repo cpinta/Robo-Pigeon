@@ -17,6 +17,10 @@ public class GM : MonoBehaviour
     public PlayerController player;
 
     public Van prefabVan;
+    public GameObject prefabHouseYellow;
+    public GameObject prefabHouseRed;
+    public GameObject prefabHousePurple;
+    public GameObject prefabHouseBlue;
 
     public UnityEvent<string, int> scoreChanged;
 

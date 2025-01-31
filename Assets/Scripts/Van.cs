@@ -54,4 +54,9 @@ public class Van : MonoBehaviour
         currentNode = node;
         targetRotation = Quaternion.LookRotation((currentNode.transform.position - transform.position).normalized);
     }
+
+    public void ThrowNewspaper(Vector3 destination)
+    {
+
+    }
 }
