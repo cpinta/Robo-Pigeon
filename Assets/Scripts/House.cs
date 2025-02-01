@@ -11,9 +11,10 @@ public enum HouseState
 
 public class House : MonoBehaviour
 {
-    GameObject newspaper;
+    Newspaper newspaper;
     [SerializeField] Transform trNewspaperSpot;
     [SerializeField] Transform trPerson;
+    [SerializeField] Transform trPersonHand;
     [SerializeField] Transform trPathStart;
 
     HouseState state = HouseState.Idle;
@@ -46,6 +47,10 @@ public class House : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if(newspaper == null)
+        {
+            state = HouseState.Idle;
+        }
         switch (state)
         {
             case HouseState.Idle:
@@ -77,7 +82,8 @@ public class House : MonoBehaviour
                     currentNodeTarget++;
                     if(currentNodeTarget >= pathNodes.Count)
                     {
-                        state = HouseState.HasNewspaper;
+                        GotNewspaper();
+                        break;
                     }
                 }
 
@@ -88,10 +94,11 @@ public class House : MonoBehaviour
                 distance = Vector3.Distance(trPerson.position, pathNodes[currentNodeTarget].position);
                 if (distance < minNodeDistance)
                 {
-                    currentNodeTarget++;
-                    if (currentNodeTarget >= pathNodes.Count)
+                    currentNodeTarget--;
+                    if (currentNodeTarget < 0)
                     {
-                        state = HouseState.HasNewspaper;
+                        WentBackInside();
+                        break;
                     }
                 }
 
@@ -108,23 +115,37 @@ public class House : MonoBehaviour
     void GotNewspaper()
     {
         state = HouseState.HasNewspaper;
+
+        newspaper.transform.parent = trPersonHand;
+        newspaper.transform.localPosition = Vector3.zero;
+        currentNodeTarget = 3;
     }
 
     void WentBackInside()
     {
-        getAnotherNewspaperDelayTimer = getAnotherNewspaperDelay;
         state = HouseState.Idle;
+        getAnotherNewspaperDelayTimer = getAnotherNewspaperDelay;
+
+        trPerson.transform.localPosition = Vector3.zero;
+        currentNodeTarget = 0;
+        Destroy(newspaper);
     }
 
-    private void OnCollisionEnter(Collision collision)
+
+    private void OnTriggerEnter(Collider other)
     {
-        if(collision.gameObject.tag == "Van")
+        if (!acceptingNewspapers)
         {
-            Van van = collision.gameObject.GetComponent<Van>();
-            van.ThrowNewspaper(trNewspaperSpot.position);
+            return;
+        }
+        if(other.gameObject.tag == "Van")
+        {
+            Van van = other.gameObject.GetComponent<Van>();
+            newspaper = van.ThrowNewspaper(trNewspaperSpot);
             state = HouseState.NewspaperOnSidewalk;
             afterHasPaperDelayTimer = afterHasPaperDelay;
             acceptingNewspapers = false;
+            currentNodeTarget = 0;
         }
     }
 }

@@ -255,8 +255,6 @@ public class PlayerController : MonoBehaviour
 
                 model.transform.localEulerAngles = trFlyRotation.localEulerAngles;
 
-                Debug.Log("sdfkljaasdfjkl" + flyMaxSpeed * (currentPower < powerMinFullSpeedCharge ? (currentPower / powerMinFullSpeedCharge) : 1));
-
                 float maxSpeed = flyMaxSpeed * (currentPower < powerMinFullSpeedCharge ? (currentPower / powerMinFullSpeedCharge) : 1);
 
                 if (rb.linearVelocity.magnitude < maxSpeed)

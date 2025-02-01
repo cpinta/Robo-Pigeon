@@ -14,6 +14,10 @@ public class VanNode : MonoBehaviour
     void Start()
     {
         renderer = GetComponent<Renderer>();
+        if (!GM.Instance.isInDebugMode)
+        {
+            renderer.material = GM.Instance.matInvisible;
+        }
     }
 
     // Update is called once per frame

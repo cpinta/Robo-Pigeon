@@ -1,6 +1,10 @@
+using System;
+using System.Linq;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SocialPlatforms.Impl;
+using Random = UnityEngine.Random;
 
 public class GM : MonoBehaviour
 {
@@ -13,20 +17,28 @@ public class GM : MonoBehaviour
     }
     private static GM instance;
 
+    public bool isInDebugMode = true;
+
     public Camera cam;
     public PlayerController player;
 
     public Van prefabVan;
+    public Newspaper prefabNewspaper;
     public GameObject prefabHouseYellow;
     public GameObject prefabHouseRed;
     public GameObject prefabHousePurple;
     public GameObject prefabHouseBlue;
+
+    public Material matInvisible;
 
     public UnityEvent<string, int> scoreChanged;
 
     //score vars
     public int score = 0;
     public int highscore = 0;
+
+    string strGrabNewspaperDesc = "Stole Newspaper";
+    int grabNewspaperScoreAmount = 5;
 
     public int currentStreak = 0;
     public int highestStreak = 0;
@@ -45,6 +57,11 @@ public class GM : MonoBehaviour
             Debug.LogError("More than one GameManager in scene!");
             Destroy(this);
         }
+
+        // balls
+        string balls = "balls";
+        int[] intArray = balls.ToIntArray();
+        Random.InitState(intArray.Select((t, i) => t * Convert.ToInt32(Math.Pow(10, intArray.Length - i - 1))).Sum());
     }
 
     public void ChangeScore(int amount, string description)
@@ -57,6 +74,11 @@ public class GM : MonoBehaviour
         {
             score = 0;
         }
+    }
+
+    public void PlayerGrabbedNewspaper()
+    {
+        ChangeScore(grabNewspaperScoreAmount, strGrabNewspaperDesc);
     }
 
     public void AddStreak()

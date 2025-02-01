@@ -55,8 +55,14 @@ public class Van : MonoBehaviour
         targetRotation = Quaternion.LookRotation((currentNode.transform.position - transform.position).normalized);
     }
 
-    public void ThrowNewspaper(Vector3 destination)
+    public Newspaper ThrowNewspaper(Transform destination)
     {
+        Newspaper newspaper = Instantiate(GM.Instance.prefabNewspaper, destination);
+        newspaper.transform.position = transform.position;
+        newspaper.transform.eulerAngles = new Vector3(0, -90, 0);
 
+        newspaper.Setup(destination.position);
+
+        return newspaper;
     }
 }
