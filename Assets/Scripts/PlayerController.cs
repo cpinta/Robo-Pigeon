@@ -89,6 +89,8 @@ public class PlayerController : MonoBehaviour
     float isHurtTime = 2;
     float hurtPowerLoss = 10;
     float hurtBounceSpeed = 2;
+    //Quaternion preHurtRotation = Quaternion.identity;
+    float hurtSpinSpeed = -800;
 
     //score vars
     string strGrindScoreDesc = "Grinding";
@@ -329,9 +331,11 @@ public class PlayerController : MonoBehaviour
                 {
                     SetState(PigeonState.Fly);
                 }
-                trFlyRotation.RotateAround(transform.position, Vector3.up, inputMove.x * flyTurnSpeed * Time.fixedDeltaTime);
-                trFlyRotation.Rotate(new Vector3(inputMove.y * flyTurnSpeed * Time.fixedDeltaTime, 0, 0));
-                model.transform.localEulerAngles = trFlyRotation.localEulerAngles;
+                //trFlyRotation.RotateAround(transform.position, Vector3.up, inputMove.x * flyTurnSpeed * Time.fixedDeltaTime);
+                //trFlyRotation.Rotate(new Vector3(inputMove.y * flyTurnSpeed * Time.fixedDeltaTime, 0, 0));
+                //model.transform.localEulerAngles = trFlyRotation.localEulerAngles;
+
+                model.transform.Rotate(new Vector3(hurtSpinSpeed * Time.fixedDeltaTime, 0,0));
 
                 transform.position += hurtDirection * Time.fixedDeltaTime;
                 break;
@@ -391,6 +395,7 @@ public class PlayerController : MonoBehaviour
 
     void Collision(Collision collision)
     {
+        Quaternion preHurtRotation = trFlyRotation.rotation;
         hurtDirection = collision.contacts[0].normal * hurtBounceSpeed;
 
         LosePower(hurtPowerLoss);

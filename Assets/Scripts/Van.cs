@@ -12,6 +12,8 @@ public class Van : MonoBehaviour
     public VanNode previousNode;
     public VanNode currentNode;
 
+    public bool wasHit;
+
     Quaternion targetRotation;
 
     float turnSpeed = 10;
@@ -74,5 +76,10 @@ public class Van : MonoBehaviour
         newspaper.Setup(destination.position);
 
         return newspaper;
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        
     }
 }
