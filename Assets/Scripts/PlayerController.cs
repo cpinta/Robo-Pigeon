@@ -74,6 +74,7 @@ public class PlayerController : MonoBehaviour
     float elapsedTime;
     [SerializeField] float lerpSpeed = 10f;
     [SerializeField] Rail currentRail;
+    Rail queueRail;
 
     public float grindSwitchRailTime = 0.5f;
     public float grindSwitchRailTimer = 0;
@@ -127,6 +128,7 @@ public class PlayerController : MonoBehaviour
 
         PlayerRailCollider railCol = GetComponentInChildren<PlayerRailCollider>();
         railCol.railHit.AddListener(GetOnRail);
+        railCol.railLeft.AddListener(RailLeftRadius);
 
         anim.SetBool(strIsGrinding, false);
         anim.SetBool(strIsGrinding, false);
@@ -217,7 +219,6 @@ public class PlayerController : MonoBehaviour
                 Vector3 prepos = transform.position;
                 rb.linearVelocity = Vector3.zero;
                 MoveAlongRail();
-                Debug.Log(((transform.position - prepos)/Time.fixedDeltaTime).magnitude);
                 GainPower(powerChargeRateRail * Time.fixedDeltaTime);
                 if(grindSwitchRailTimer > 0)
                 {
@@ -503,9 +504,30 @@ public class PlayerController : MonoBehaviour
 
     void GetOnRail(Rail rail)
     {
+        if(state == PigeonState.Grind)
+        {
+            queueRail = rail;
+            return;
+        }
+        else
+        {
+            queueRail = null;
+        }
+
         SetState(PigeonState.Grind);
         currentRail = rail;
         CalculateAndSetRailPosition();
+    }
+
+    void RailLeftRadius(Rail rail)
+    {
+        if(state == PigeonState.Grind)
+        {
+            if(rail == queueRail)
+            {
+                queueRail = null;
+            }
+        }
     }
 
     public void SetState(PigeonState newState)
@@ -619,15 +641,27 @@ public class PlayerController : MonoBehaviour
     void CalculateAndSetRailPosition()
     {
         timeForFullSpline = currentRail.totalSplineLength / rb.linearVelocity.magnitude;
-        Debug.Log("Pre:"+rb.linearVelocity.magnitude);
 
         Vector3 splinePoint;
 
         float normalisedTime = currentRail.CalculateTargetRailPoint(transform.position, out splinePoint);
+
+        if( normalisedTime < 0)
+        {
+            normalisedTime = 0;
+        }
+        if(normalisedTime > 1)
+        {
+            normalisedTime = 1;
+        }
+
         elapsedTime = timeForFullSpline * normalisedTime;
 
         float3 pos, forward, up;
         SplineUtility.Evaluate(currentRail.railSpline.Spline, normalisedTime, out pos, out forward, out up);
+        forward.y = 0;
+        Vector3 flatRotation = trFlyRotation.forward;
+        flatRotation.y = 0;
         currentRail.CalculateDirection(forward, trFlyRotation.forward);
         transform.position = splinePoint + (transform.up * heightOffset);
         trFlyRotation.transform.rotation = transform.rotation;
@@ -639,10 +673,13 @@ public class PlayerController : MonoBehaviour
         Vector3 otherAngle = new Vector3(transform.forward.x, trFlyRotation.forward.y, transform.forward.z);
         flyRotation = trFlyRotation.eulerAngles;
         //flyRotation.y = Vector3.Angle(transform.forward, otherAngle);
-        Debug.Log("Post:"+currentRail.totalSplineLength / timeForFullSpline);
         rb.linearVelocity = trFlyRotation.forward * (currentRail.totalSplineLength / timeForFullSpline);
         currentRail = null;
         SetTransformRotationToFlyRotation();
+        if(queueRail != null)
+        {
+            GetOnRail(queueRail);
+        }
         //trFlyRotation.position += trFlyRotation.forward * 1;
     }
 }

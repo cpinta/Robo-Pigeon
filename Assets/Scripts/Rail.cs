@@ -78,8 +78,8 @@ public class Rail : MonoBehaviour
 
     public void CalculateDirection(float3 railForward, Vector3 playerForward)
     {
-        float angle = Vector3.Angle(railForward, playerForward.normalized);
-        if (angle > 90f)
+        float angle = Vector3.SignedAngle(railForward, playerForward.normalized, Vector3.up);
+        if (angle < 0f)
         {
 
             normalDir = false;
@@ -88,5 +88,6 @@ public class Rail : MonoBehaviour
         {
             normalDir = true;
         }
+        Debug.Log("on rail:" + angle + " normalDir:" + normalDir);
     }
 }

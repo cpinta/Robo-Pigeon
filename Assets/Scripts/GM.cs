@@ -112,9 +112,9 @@ public class GM : MonoBehaviour
         if (player != null) 
         {
             Vector3 playerPos = player.transform.position;
-            Vector3 borderDistances = ((cityBorderDimensions / 2) - new Vector3(Mathf.Abs(playerPos.x), Mathf.Abs(playerPos.y), Mathf.Abs(playerPos.z)));
+            Vector3 borderDistances = (((cityBorderDimensions / 2) + (Vector3.up * cityBorderDimensions.y/2)) - new Vector3(Mathf.Abs(playerPos.x), Mathf.Abs(playerPos.y), Mathf.Abs(playerPos.z)));
             playerDistanceToBorder = Mathf.Min(borderDistances.x, Mathf.Min(borderDistances.y, borderDistances.z));
-            Debug.Log(playerDistanceToBorder);
+            //Debug.Log(playerDistanceToBorder);
         }
     }
 
