@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Events;
 
 public class Newspaper : MonoBehaviour
 {
@@ -7,6 +8,8 @@ public class Newspaper : MonoBehaviour
     float minDistanceToDestination = 0.1f;
 
     bool isTraveling = false;
+
+    public UnityEvent snatchedNewspaper = new UnityEvent();
 
     public void Setup(Vector3 destination)
     {
@@ -32,6 +35,7 @@ public class Newspaper : MonoBehaviour
         if (other.gameObject.tag == "Player")
         {
             GM.Instance.PlayerGrabbedNewspaper();
+            snatchedNewspaper.Invoke();
             Destroy(gameObject);
         }
     }

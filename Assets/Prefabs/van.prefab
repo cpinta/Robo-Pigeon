@@ -49,6 +49,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   movingDirection: 0
   currentNode: {fileID: 0}
+  driveSpeed: 100
 --- !u!64 &678950456206115239
 MeshCollider:
   m_ObjectHideFlags: 0

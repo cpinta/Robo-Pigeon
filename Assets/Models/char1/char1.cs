@@ -40,16 +40,35 @@ public class char1 : MonoBehaviour
     void Update()
     {
 
-        float signedAngle = Vector3.SignedAngle(transform.forward, Camera.main.transform.forward, Vector3.up);
+        FaceCamera();
+    }
+
+    public void SetIsWalking(bool set)
+    {
+        animator.SetBool(strIsWalking, set);
+    }
+
+    public void SetIsYelling(bool set)
+    {
+        animator.SetBool(strIsYelling, set);
+    }
+
+    public void SetIsPickingUp(bool set)
+    {
+        animator.SetBool(strIsPickingUp, set);
+    }
+
+    void FaceCamera()
+    {
+        float signedAngle = Vector3.SignedAngle(new Vector3(transform.forward.x, 0, transform.forward.z), new Vector3(Camera.main.transform.forward.x, 0, Camera.main.transform.forward.z), Vector3.up);
         float angle = Mathf.Abs(signedAngle);
-        print(angle);
-        if(angle < backAngle)
+        if (angle < backAngle)
         {
             facing = BillboardFacing.back;
         }
         else if (angle < sideAngle)
         {
-            if(signedAngle > 0)
+            if (signedAngle > 0)
             {
                 facing = BillboardFacing.left;
             }

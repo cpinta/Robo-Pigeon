@@ -6,7 +6,7 @@ public class VanPath : MonoBehaviour
     int pathLength;
     List<VanNode> pathNodes = new List<VanNode>();
 
-    float timeBetweenVanSpawns = 4;
+    public float timeBetweenVanSpawns = 4;
     float timeBetweenVanSpawnsTimer = 0;
 
     bool spawned = false;

@@ -14,7 +14,7 @@ public class Van : MonoBehaviour
     Quaternion targetRotation;
 
     float turnSpeed = 10;
-    float driveSpeed = 10;
+    public float driveSpeed = 10;
     float minNodeDistance = 0.1f;
 
     float heightOffGround = 0.5f;
