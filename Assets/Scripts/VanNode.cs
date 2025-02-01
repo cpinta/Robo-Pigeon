@@ -40,6 +40,20 @@ public class VanNode : MonoBehaviour
     {
         return vansInSphere == 0;
     }
+    public VanNode GetRandomNextNode()
+    {
+        return nodeOptions[(int)(Random.value * nodeOptions.Count)];
+    }
+
+    public VanNode GetRandomNextNode(VanNode node)
+    {
+        List<VanNode> nodes = nodeOptions;
+        if(nodes.Count > 1)
+        {
+            nodes.Remove(node);
+        }
+        return nodes[(int)(Random.value * nodes.Count)];
+    }
 
     private void OnTriggerEnter(Collider other)
     {

@@ -64,7 +64,7 @@ public class char1 : MonoBehaviour
         float angle = Mathf.Abs(signedAngle);
         if (angle < backAngle)
         {
-            facing = BillboardFacing.back;
+            facing = BillboardFacing.front;
         }
         else if (angle < sideAngle)
         {
@@ -80,7 +80,7 @@ public class char1 : MonoBehaviour
         }
         else
         {
-            facing = BillboardFacing.front;
+            facing = BillboardFacing.back;
         }
 
         animator.SetInteger(strFacing, (int)facing);

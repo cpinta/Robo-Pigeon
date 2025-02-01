@@ -9,6 +9,7 @@ public enum Direction
 public class Van : MonoBehaviour
 {
     public Direction movingDirection;
+    public VanNode previousNode;
     public VanNode currentNode;
 
     Quaternion targetRotation;
@@ -45,12 +46,21 @@ public class Van : MonoBehaviour
 
     void SetNodeToNext()
     {
-        //SetNodeTarget(currentNode.nextNode);
+        if (previousNode == null)
+        {
+            previousNode = currentNode;
+            SetNodeTarget(currentNode.GetRandomNextNode());
+        }
+        else
+        {
+            SetNodeTarget(currentNode.GetRandomNextNode(previousNode));
+        }
     }
 
     public void SetNodeTarget(VanNode node)
     {
         transform.position = currentNode.transform.position;
+        previousNode = currentNode;
         currentNode = node;
         targetRotation = Quaternion.LookRotation((currentNode.transform.position - transform.position).normalized);
     }
