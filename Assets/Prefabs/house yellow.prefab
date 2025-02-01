@@ -50,7 +50,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7868908342436817350, guid: ab7f9f851923bef4d91f5cf154acae15, type: 3}
       propertyPath: m_Name
-      value: house Variant
+      value: house yellow
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

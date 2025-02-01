@@ -45,7 +45,7 @@ public class Van : MonoBehaviour
 
     void SetNodeToNext()
     {
-        SetNodeTarget(currentNode.nextNode);
+        //SetNodeTarget(currentNode.nextNode);
     }
 
     public void SetNodeTarget(VanNode node)

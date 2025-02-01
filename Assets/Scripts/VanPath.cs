@@ -14,18 +14,18 @@ public class VanPath : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        VanNode n = GetComponent<VanNode>();
-        pathNodes.Add(n);
-        while (n.transform.childCount != 0)
-        {
-            VanNode newn = n.transform.GetChild(0).GetComponent<VanNode>();
-            n.nextNode = newn;
-            newn.prevNode = n;
-            n = newn;
-            pathNodes.Add(n);
-        }
-        pathNodes[0].prevNode = pathNodes[pathNodes.Count - 1];
-        pathNodes[pathNodes.Count - 1].nextNode = pathNodes[0];
+        //VanNode n = GetComponent<VanNode>();
+        //pathNodes.Add(n);
+        //while (n.transform.childCount != 0)
+        //{
+        //    VanNode newn = n.transform.GetChild(0).GetComponent<VanNode>();
+        //    n.nextNode = newn;
+        //    newn.prevNode = n;
+        //    n = newn;
+        //    pathNodes.Add(n);
+        //}
+        //pathNodes[0].prevNode = pathNodes[pathNodes.Count - 1];
+        //pathNodes[pathNodes.Count - 1].nextNode = pathNodes[0];
     }
 
     // Update is called once per frame
@@ -61,7 +61,7 @@ public class VanPath : MonoBehaviour
         VanNode chosen = notVisibleNodes[(int)(Random.value * (notVisibleNodes.Count - 1))];
 
         Van van = Instantiate(GM.Instance.prefabVan, chosen.transform);
-        van.currentNode = chosen.nextNode;
+        //van.currentNode = chosen.nextNode;
         van.transform.rotation = Quaternion.LookRotation((van.currentNode.transform.position - van.transform.position).normalized);
         van.SetNodeTarget(van.currentNode);
 

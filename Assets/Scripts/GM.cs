@@ -46,6 +46,9 @@ public class GM : MonoBehaviour
     float streakTimer = 0;
     float perStreakScoreMultiplier = 0.05f;
 
+    public float playerDistanceToBorder = 1000;
+    [SerializeField] Vector3 cityBorderDimensions = new Vector3(600, 300, 600);
+
     private void Awake()
     {
         if (instance == null)
@@ -106,6 +109,23 @@ public class GM : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        if (player != null) 
+        {
+            Vector3 playerPos = player.transform.position;
+            Vector3 borderDistances = ((cityBorderDimensions / 2) - new Vector3(Mathf.Abs(playerPos.x), Mathf.Abs(playerPos.y), Mathf.Abs(playerPos.z)));
+            playerDistanceToBorder = Mathf.Min(borderDistances.x, Mathf.Min(borderDistances.y, borderDistances.z));
+            Debug.Log(playerDistanceToBorder);
+        }
+    }
+
+    void Restart()
+    {
+        playerDistanceToBorder = 1000;
+    }
+
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireCube(Vector3.zero + (Vector3.up * cityBorderDimensions.y/2), cityBorderDimensions);
     }
 }

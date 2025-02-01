@@ -1,10 +1,10 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
 public class VanNode : MonoBehaviour
 {
-    public VanNode nextNode;
-    public VanNode prevNode;
+    public List<VanNode> nodeOptions = new List<VanNode>();
 
     Renderer renderer;
 

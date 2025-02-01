@@ -62,7 +62,9 @@ public class PlayerController : MonoBehaviour
     public float powerMinFullSpeedCharge = 75;
     public float powerDrain = 10;
     public float powerChargeRateRail = 5;
+    public float powerMaxDrain = 10;
     public float currentPower = 100;
+    public float batteryPowerGain = 30;
 
     //grind vars
     bool isSwitchingRails = true;
@@ -99,12 +101,15 @@ public class PlayerController : MonoBehaviour
     float maxSpeedScoreEveryTimer = 0;
 
     string strFlapScoreDesc = "Flap Wings";
-    int flapScoreAmount = 2;
+    int flapScoreAmount = 3;
 
     string strStoleMailDesc = "Stole Mail";
-    int stealMailScoreAmount = 4;
+    int stealMailScoreAmount = 6;
     string strBlindedMailTruck = "Blinded Mail Truck";
     int poopVanScoreAmount = 8;
+
+    string strPickupBatteryDesc = "Battery Picked Up";
+    int pickupBatteryScoreAmount = 4;
 
 
 
@@ -175,9 +180,21 @@ public class PlayerController : MonoBehaviour
         return angle;
     }
 
+    public void PickUpBattery()
+    {
+        GainPower(batteryPowerGain);
+        ChangeScore(pickupBatteryScoreAmount, strPickupBatteryDesc);
+    }
+
     private void FixedUpdate()
     {
         Vector2 moveVector = Vector2.zero;
+
+
+        if (currentPower > powerMax)
+        {
+            currentPower -= powerMaxDrain * Time.fixedDeltaTime;
+        }
         switch (state)
         {
             case PigeonState.Walk:
@@ -219,7 +236,7 @@ public class PlayerController : MonoBehaviour
                 }
                 else
                 {
-                    GM.Instance.ChangeScore(grindScoreAmount, strGrindScoreDesc);
+                    ChangeScore(grindScoreAmount, strGrindScoreDesc);
                     addGrindScoreEveryTimer = addGrindScoreEvery;
                 }
                 break;
@@ -347,10 +364,6 @@ public class PlayerController : MonoBehaviour
     void GainPower(float givePower)
     {
         currentPower += givePower;
-        if (currentPower > powerMax)
-        {
-            currentPower = powerMax;
-        }
     }
 
     void ChangeScore(int giveScore, string description)

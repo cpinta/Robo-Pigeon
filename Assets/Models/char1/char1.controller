@@ -233,7 +233,7 @@ AnimatorStateMachine:
   m_EntryTransitions: []
   m_StateMachineTransitions: {}
   m_StateMachineBehaviours: []
-  m_AnyStatePosition: {x: -90, y: 0, z: 0}
+  m_AnyStatePosition: {x: -90, y: 50, z: 0}
   m_EntryPosition: {x: -90, y: 120, z: 0}
   m_ExitPosition: {x: 800, y: 120, z: 0}
   m_ParentStateMachinePosition: {x: 120, y: -10, z: 0}
@@ -249,7 +249,7 @@ AnimatorStateTransition:
   - m_ConditionMode: 6
     m_ConditionEvent: facing
     m_EventTreshold: 1
-  - m_ConditionMode: 2
+  - m_ConditionMode: 1
     m_ConditionEvent: isWalking
     m_EventTreshold: 0
   m_DstStateMachine: {fileID: 0}
@@ -506,7 +506,7 @@ AnimatorStateTransition:
   - m_ConditionMode: 6
     m_ConditionEvent: facing
     m_EventTreshold: 0
-  - m_ConditionMode: 2
+  - m_ConditionMode: 1
     m_ConditionEvent: isWalking
     m_EventTreshold: 0
   m_DstStateMachine: {fileID: 0}
