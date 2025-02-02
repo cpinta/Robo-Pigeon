@@ -32,9 +32,7 @@ public class TitleManager : MonoBehaviour
         txtPigeon.enabled = false;
         txtSubText.enabled = false;
         startButton.gameObject.SetActive(false);
-        //startButton.onClick.AddListener(StartGame);
-        //audioSource.clip = acTitleMusic;
-        //audioSource.Play();
+        startButton.onClick.AddListener(StartGame);
     }
 
     // Update is called once per frame
