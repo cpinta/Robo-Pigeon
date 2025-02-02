@@ -111,11 +111,6 @@ public class PlayerController : MonoBehaviour
     string strFlapScoreDesc = "Flap Wings";
     int flapScoreAmount = 3;
 
-    string strStoleMailDesc = "Stole Mail";
-    int stealMailScoreAmount = 6;
-    string strBlindedMailTruck = "Blinded Mail Truck";
-    int poopVanScoreAmount = 8;
-
     string strPickupBatteryDesc = "Battery Picked Up";
     int pickupBatteryScoreAmount = 4;
 
@@ -226,7 +221,10 @@ public class PlayerController : MonoBehaviour
                 Vector3 prepos = transform.position;
                 rb.linearVelocity = Vector3.zero;
                 MoveAlongRail();
-                GainPower(powerChargeRateRail * Time.fixedDeltaTime);
+                if (true)
+                {
+                    GainPower(powerChargeRateRail * Time.fixedDeltaTime);
+                }
                 if(grindSwitchRailTimer > 0)
                 {
                     isSwitchingRails = true;
@@ -354,7 +352,7 @@ public class PlayerController : MonoBehaviour
     {
         Plop plop = Instantiate(prefabPlop);
         plop.transform.position = model.transform.position;
-        plop.Setup(plop.transform.position, cam.transform.forward, plopSpeed);
+        plop.Setup(plop.transform.position, model.transform.forward, plopSpeed);
     }
 
     void EndHover()
@@ -686,6 +684,8 @@ public class PlayerController : MonoBehaviour
 
         float3 pos, forward, up;
         SplineUtility.Evaluate(currentRail.railSpline.Spline, normalisedTime, out pos, out forward, out up);
+        forward = Quaternion.Euler(currentRail.transform.rotation.eulerAngles) * forward;
+        Debug.Log("foward: " + forward);
         forward.y = 0;
         Vector3 flatRotation = trFlyRotation.forward;
         flatRotation.y = 0;
@@ -696,10 +696,12 @@ public class PlayerController : MonoBehaviour
 
     void ThrowOffRail()
     {
-        SetState(PigeonState.Fly);
+        if (queueRail == null)
+        {
+            SetState(PigeonState.Fly);
+        }
         Vector3 otherAngle = new Vector3(transform.forward.x, trFlyRotation.forward.y, transform.forward.z);
         flyRotation = trFlyRotation.eulerAngles;
-        //flyRotation.y = Vector3.Angle(transform.forward, otherAngle);
         rb.linearVelocity = trFlyRotation.forward * (currentRail.totalSplineLength / timeForFullSpline);
         currentRail = null;
         SetTransformRotationToFlyRotation();

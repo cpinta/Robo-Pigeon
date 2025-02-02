@@ -26,6 +26,9 @@ public class Van : MonoBehaviour
 
     float heightOffGround = 0.5f;
 
+    string strBlindedMailTruck = "Blinded Mail Truck";
+    int blindedMailTruckScoreAmount = 2;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -101,5 +104,6 @@ public class Van : MonoBehaviour
     {
         wasHit = true;
         hitTimer = hitTime;
+        GM.Instance.ChangeScore(blindedMailTruckScoreAmount, strBlindedMailTruck);
     }
 }

@@ -241,3 +241,4 @@ MonoBehaviour:
   railSpline: {fileID: 2549298620718154070}
   totalSplineLength: 0
   radius: 0
+  isPowered: 0
