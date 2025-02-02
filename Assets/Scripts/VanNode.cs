@@ -14,9 +14,12 @@ public class VanNode : MonoBehaviour
     void Start()
     {
         renderer = GetComponent<Renderer>();
-        if (!GM.Instance.isInDebugMode)
+        if(GM.Instance)
         {
-            renderer.material = GM.Instance.matInvisible;
+            if (!GM.Instance.isInDebugMode)
+            {
+                renderer.material = GM.Instance.matInvisible;
+            }
         }
     }
 

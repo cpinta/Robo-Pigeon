@@ -50,6 +50,7 @@ public class PlayerController : MonoBehaviour
     public float flyMaxSpeed = 10;
     public float flyAboveMaxDecel = 2.5f;
     public float flyAcceleration = 5;
+    public float minFlySpeed = 0.1f;
     public float currentFlySpeed = 0;
     public float gravityMagnitude = 5;
 
@@ -73,6 +74,7 @@ public class PlayerController : MonoBehaviour
     public float powerMaxDrain = 10;
     public float currentPower = 100;
     public float batteryPowerGain = 30;
+    public float batterySpeedGain = 10;
 
     //grind vars
     [Header("Grind")]
@@ -298,18 +300,18 @@ public class PlayerController : MonoBehaviour
 
                 float maxSpeed = flyMaxSpeed * (currentPower < powerMinFullSpeedCharge ? (currentPower / powerMinFullSpeedCharge) : 1);
 
-                if (rb.linearVelocity.magnitude < maxSpeed)
+                if (currentFlySpeed > maxSpeed)
                 {
-                    rb.linearVelocity = trFlyRotation.forward * (rb.linearVelocity.magnitude + (flyAcceleration * Time.fixedDeltaTime));
-                }
-                else
-                {
-                    if ((trFlyRotation.forward * maxSpeed).magnitude != 0)
+                    if (maxSpeed != 0)
                     {
-                        rb.linearVelocity = trFlyRotation.forward * maxSpeed;
+                        currentFlySpeed -= currentFlySpeed * flyAboveMaxDecel * Time.fixedDeltaTime;
+                    }
+                    else
+                    {
+                        currentFlySpeed = 0;
                     }
 
-                    if(rb.linearVelocity.magnitude > flyMaxSpeed)
+                    if (currentFlySpeed > flyMaxSpeed)
                     {
                         if (maxSpeedScoreEveryTimer > 0)
                         {
@@ -321,6 +323,14 @@ public class PlayerController : MonoBehaviour
                             maxSpeedScoreEveryTimer = maxSpeedScoreEvery;
                         }
                     }
+                }
+                else
+                {
+                    currentFlySpeed += flyAcceleration * Time.fixedDeltaTime;
+                }
+                if(currentPower != powerMin)
+                {
+                    rb.linearVelocity = trFlyRotation.forward * currentFlySpeed;
                 }
                 //rb.linearVelocity += transform.up * -gravityMagnitude * Time.fixedDeltaTime;
 
@@ -350,8 +360,8 @@ public class PlayerController : MonoBehaviour
                 }
                 else
                 {
-                    
                     SetState(PigeonState.Fly);
+                    trFlyRotation.RotateAround(trFlyRotation.position, Vector3.right, -trFlyRotation.eulerAngles.x * 2);
                 }
                 //trFlyRotation.RotateAround(transform.position, Vector3.up, inputMove.x * flyTurnSpeed * Time.fixedDeltaTime);
                 //trFlyRotation.Rotate(new Vector3(inputMove.y * flyTurnSpeed * Time.fixedDeltaTime, 0, 0));
@@ -541,7 +551,7 @@ public class PlayerController : MonoBehaviour
         {
             anim.SetTrigger(strFlap);
             SetState(PigeonState.Fly);
-            rb.AddForce(trFlyRotation.forward * flapForce);
+            currentFlySpeed += flapForce;
             LosePower(flapPowerDrain);
         }
     }
@@ -724,6 +734,10 @@ public class PlayerController : MonoBehaviour
         if(queueRail != null)
         {
             GetOnRail(queueRail);
+        }
+        else
+        {
+            trFlyRotation.RotateAround(trFlyRotation.position, Vector3.right, -trFlyRotation.eulerAngles.x * 2);
         }
         //trFlyRotation.position += trFlyRotation.forward * 1;
     }

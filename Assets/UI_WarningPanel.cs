@@ -29,7 +29,7 @@ public class UI_WarningPanel : MonoBehaviour
 
     float nearBorderDistance = 40;
 
-    string strNearBorderWarning = "WARNING:\nApproaching City Limits\nTurn Back!";
+    string strNearBorderWarning = "WARNING:\nApproaching CITY_LIMIT\nTurn_Back()!";
 
     WarningScreenState state;
 
