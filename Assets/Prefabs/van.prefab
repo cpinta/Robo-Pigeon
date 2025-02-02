@@ -48,8 +48,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   movingDirection: 0
+  previousNode: {fileID: 0}
   currentNode: {fileID: 0}
-  driveSpeed: 100
+  trModel: {fileID: 1214638505599535367}
+  wasHit: 0
+  hitSpin: 1000
+  hitTime: 3
+  driveSpeed: 10
 --- !u!64 &678950456206115239
 MeshCollider:
   m_ObjectHideFlags: 0

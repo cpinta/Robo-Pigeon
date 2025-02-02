@@ -33,8 +33,9 @@ public class PlayerController : MonoBehaviour
     public PigeonState state = PigeonState.Fly;
     public Vector2 inputMove = Vector2.zero;
     public Vector2 inputLook = Vector2.zero;
-    public bool inputJump = false;
-    public bool inputAimFly = false;
+    bool inputJump = false;
+    bool inputAimFly = false;
+    bool inputShoot = false;
     public Vector3 moveDirection = Vector3.zero;
 
     //fly vars
@@ -91,6 +92,10 @@ public class PlayerController : MonoBehaviour
     float hurtBounceSpeed = 2;
     //Quaternion preHurtRotation = Quaternion.identity;
     float hurtSpinSpeed = -800;
+
+    //plop vars
+    [SerializeField] Plop prefabPlop;
+    [SerializeField] float plopSpeed = 100;
 
     //score vars
     string strGrindScoreDesc = "Grinding";
@@ -345,6 +350,13 @@ public class PlayerController : MonoBehaviour
 
     }
 
+    void ShootPlop()
+    {
+        Plop plop = Instantiate(prefabPlop);
+        plop.transform.position = model.transform.position;
+        plop.Setup(plop.transform.position, cam.transform.forward, plopSpeed);
+    }
+
     void EndHover()
     {
         SetState(PigeonState.Fly);
@@ -494,6 +506,16 @@ public class PlayerController : MonoBehaviour
                 }
                 break;
         }
+    }
+
+    public void Shoot(InputAction.CallbackContext context)
+    {
+        inputShoot = context.performed;
+        if (inputShoot)
+        {
+            ShootPlop();
+        }
+        //Debug.Log("dirVector:" +directionVector);
     }
 
     public void Flap()

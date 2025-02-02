@@ -11,8 +11,12 @@ public class Van : MonoBehaviour
     public Direction movingDirection;
     public VanNode previousNode;
     public VanNode currentNode;
+    [SerializeField] Transform trModel;
 
     public bool wasHit;
+    [SerializeField] float hitSpin = 200;
+    [SerializeField] float hitTime = 3;
+    float hitTimer = 0;
 
     Quaternion targetRotation;
 
@@ -31,18 +35,33 @@ public class Van : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(currentNode != null)
+        if (!wasHit)
         {
-            float distance = Vector3.Distance(transform.position, currentNode.transform.position);
-            if (distance > minNodeDistance)
+            if (currentNode != null)
             {
-                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * turnSpeed);
-                transform.position = Vector3.MoveTowards(transform.position, currentNode.transform.position, Time.deltaTime * driveSpeed);
+                float distance = Vector3.Distance(transform.position, currentNode.transform.position);
+                if (distance > minNodeDistance)
+                {
+                    transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * turnSpeed);
+                    transform.position = Vector3.MoveTowards(transform.position, currentNode.transform.position, Time.deltaTime * driveSpeed);
+                }
+                else
+                {
+                    SetNodeToNext();
+                }
+            }
+        }
+        else
+        {
+            if(hitTimer > 0)
+            {
+                hitTimer -= Time.deltaTime;
             }
             else
             {
-                SetNodeToNext();
+                Destroy(gameObject);
             }
+            transform.Rotate(new Vector3(0, hitSpin * Time.deltaTime, 0));
         }
     }
 
@@ -78,8 +97,9 @@ public class Van : MonoBehaviour
         return newspaper;
     }
 
-    private void OnCollisionEnter(Collision collision)
+    public void Hit()
     {
-        
+        wasHit = true;
+        hitTimer = hitTime;
     }
 }
