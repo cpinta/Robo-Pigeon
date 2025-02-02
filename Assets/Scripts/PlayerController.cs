@@ -15,6 +15,7 @@ public enum PigeonState
 }
 public class PlayerController : MonoBehaviour
 {
+    [Header("Objects")]
     public Camera cam;
     public GameObject model;
     public Transform trFlyRotation;
@@ -29,7 +30,7 @@ public class PlayerController : MonoBehaviour
     string strFlap = "Flap";
 
 
-    //fly vars
+    [Header("Input and State")]
     public PigeonState state = PigeonState.Fly;
     public Vector2 inputMove = Vector2.zero;
     public Vector2 inputLook = Vector2.zero;
@@ -37,8 +38,10 @@ public class PlayerController : MonoBehaviour
     bool inputAimFly = false;
     bool inputShoot = false;
     public Vector3 moveDirection = Vector3.zero;
+    public float moveSpeed = 10f;
 
     //fly vars
+    [Header("Fly")]
     public float flyTurnSpeed = 100;
     public float flyZRotationMax = 25;
     public Vector3 flyRotation = Vector3.zero;
@@ -47,17 +50,21 @@ public class PlayerController : MonoBehaviour
     public float flyMaxSpeed = 10;
     public float flyAboveMaxDecel = 2.5f;
     public float flyAcceleration = 5;
+    public float currentFlySpeed = 0;
     public float gravityMagnitude = 5;
 
     //flap vars
+    [Header("Flap")]
     public float flapForce = 5;
     public float flapPowerDrain = 10;
 
     //hover vars
+    [Header("Hover")]
     public float hoverDecelRate = 0.025f;
     public float hoverMinSpeed = 0.5f;
 
     //power vars
+    [Header("Power")]
     public float powerMax = 100;
     public float powerMin = 0;
     public float powerMinFullSpeedCharge = 75;
@@ -68,23 +75,25 @@ public class PlayerController : MonoBehaviour
     public float batteryPowerGain = 30;
 
     //grind vars
-    bool isSwitchingRails = true;
-    [SerializeField] float grindSpeed = 10;
+    [Header("Grind")]
     [SerializeField] float heightOffset;
     float timeForFullSpline;
     float elapsedTime;
+    [SerializeField] float grindSpeedIncrease = 0.1f;
     [SerializeField] float lerpSpeed = 10f;
     [SerializeField] Rail currentRail;
     Rail queueRail;
 
+    bool isSwitchingRails = true;
     public float grindSwitchRailTime = 0.5f;
     public float grindSwitchRailTimer = 0;
 
+    [Header("Cam")]
     public float CAM_DISTANCE = 0.4f;
 
-    public float moveSpeed = 10f;
 
     //hurt vars
+    [Header("Hurt")]
     Vector3 hurtDirection = Vector3.zero;
     float isHurtTimer = 0;
     float isHurtTime = 2;
@@ -220,6 +229,7 @@ public class PlayerController : MonoBehaviour
             case PigeonState.Grind:
                 Vector3 prepos = transform.position;
                 rb.linearVelocity = Vector3.zero;
+                timeForFullSpline -= Time.fixedDeltaTime * grindSpeedIncrease;
                 MoveAlongRail();
                 if (true)
                 {
@@ -258,7 +268,13 @@ public class PlayerController : MonoBehaviour
                 {
                     if(Mathf.Abs(flyRotationZ) > 0.1f) 
                     {
+                        int sign = (int)Mathf.Sign(flyRotationZ);
                         flyRotationZ += -Mathf.Sign(flyRotationZ) * flyRotZSpeed * Time.fixedDeltaTime;
+                        if(sign != Mathf.Sign(flyRotationZ))
+                        {
+                            flyRotationZ = 0;
+                        }
+
                     }
                     else
                     {
@@ -269,6 +285,7 @@ public class PlayerController : MonoBehaviour
                 trFlyRotation.RotateAround(transform.position, Vector3.up, inputMove.x * flyTurnSpeed * Time.fixedDeltaTime);
                 trFlyRotation.Rotate(new Vector3(inputMove.y * flyTurnSpeed * Time.fixedDeltaTime, 0, 0));
 
+
                 float angle = Vector3.Angle(trFlyRotation.forward, transform.up);
                 if(angle < 10)
                 {
@@ -276,7 +293,8 @@ public class PlayerController : MonoBehaviour
                 }
 
 
-                model.transform.localEulerAngles = trFlyRotation.localEulerAngles;
+                //model.transform.localEulerAngles = trFlyRotation.localEulerAngles;
+                model.transform.localEulerAngles = new Vector3(trFlyRotation.localEulerAngles.x, trFlyRotation.localEulerAngles.y, flyRotationZ);
 
                 float maxSpeed = flyMaxSpeed * (currentPower < powerMinFullSpeedCharge ? (currentPower / powerMinFullSpeedCharge) : 1);
 
@@ -332,6 +350,7 @@ public class PlayerController : MonoBehaviour
                 }
                 else
                 {
+                    
                     SetState(PigeonState.Fly);
                 }
                 //trFlyRotation.RotateAround(transform.position, Vector3.up, inputMove.x * flyTurnSpeed * Time.fixedDeltaTime);
@@ -352,7 +371,7 @@ public class PlayerController : MonoBehaviour
     {
         Plop plop = Instantiate(prefabPlop);
         plop.transform.position = model.transform.position;
-        plop.Setup(plop.transform.position, model.transform.forward, plopSpeed);
+        plop.Setup(plop.transform.position, Camera.main.transform.forward, plopSpeed);
     }
 
     void EndHover()
@@ -696,10 +715,7 @@ public class PlayerController : MonoBehaviour
 
     void ThrowOffRail()
     {
-        if (queueRail == null)
-        {
-            SetState(PigeonState.Fly);
-        }
+        SetState(PigeonState.Fly);
         Vector3 otherAngle = new Vector3(transform.forward.x, trFlyRotation.forward.y, transform.forward.z);
         flyRotation = trFlyRotation.eulerAngles;
         rb.linearVelocity = trFlyRotation.forward * (currentRail.totalSplineLength / timeForFullSpline);

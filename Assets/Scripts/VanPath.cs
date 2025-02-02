@@ -5,6 +5,7 @@ using UnityEngine;
 public class VanPath : MonoBehaviour
 {
     int pathLength;
+    [SerializeField] VanNode startNode;
     List<VanNode> pathNodes = new List<VanNode>();
 
     public float timeBetweenVanSpawns = 4;
@@ -40,8 +41,21 @@ public class VanPath : MonoBehaviour
         }
         else
         {
-            SpawnVanAtRandomNode();
+            //SpawnVanAtRandomNode();
+            SpawnAtSpawnTile();
         }
+    }
+
+    public bool SpawnAtSpawnTile()
+    {
+        timeBetweenVanSpawnsTimer = timeBetweenVanSpawns;
+        VanNode chosen = startNode;
+
+        Van van = Instantiate(GM.Instance.prefabVan, chosen.transform);
+        van.currentNode = startNode;
+        //van.transform.rotation = Quaternion.LookRotation((van.currentNode.transform.position - van.transform.position).normalized);
+        van.SetNodeTarget(van.currentNode);
+        return true;
     }
 
     public bool SpawnVanAtRandomNode()
@@ -65,7 +79,7 @@ public class VanPath : MonoBehaviour
 
         Van van = Instantiate(GM.Instance.prefabVan, chosen.transform);
         van.currentNode = chosen.GetRandomNextNode();
-        van.transform.rotation = Quaternion.LookRotation((van.currentNode.transform.position - van.transform.position).normalized);
+        //van.transform.rotation = Quaternion.LookRotation((van.currentNode.transform.position - van.transform.position).normalized);
         van.SetNodeTarget(van.currentNode);
 
         return true;
